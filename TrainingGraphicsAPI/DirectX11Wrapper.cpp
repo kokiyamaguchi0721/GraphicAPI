@@ -166,9 +166,6 @@ HRESULT DirectX11Wrapper::Create(HWND hwnd, RECT rc)
 
 void DirectX11Wrapper::Release()
 {
-	if (m_ImmediateContext) {
-		m_ImmediateContext->ClearState();
-	}
 }
 
 bool DirectX11Wrapper::PolygonInit()
@@ -204,6 +201,8 @@ bool DirectX11Wrapper::PolygonInit()
 		0, 3, 1,
 	};
 
+	IndexNum = _countof(IndexList);
+
 	D3D11_BUFFER_DESC IBDesc;
 	IBDesc.ByteWidth = sizeof(WORD) * 6;
 	IBDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -224,7 +223,7 @@ bool DirectX11Wrapper::PolygonInit()
 
 	// 頂点シェーダコンパイル
 	ComPtr<ID3DBlob> vsblob;
-	CompileShader("Shader/PolygonVS.hlsl", "main", "vs_5_0", vsblob.ReleaseAndGetAddressOf());
+	CompileShader("Shader/BasicVS.hlsl", "main", "vs_5_0", vsblob.ReleaseAndGetAddressOf());
 
 	// 頂点シェーダー作成
 	if (FAILED(m_Device->CreateVertexShader(vsblob->GetBufferPointer(), vsblob->GetBufferSize(), NULL, m_VertexShader.ReleaseAndGetAddressOf())))
@@ -257,11 +256,54 @@ bool DirectX11Wrapper::PolygonInit()
 		return E_FAIL;
 	}
 
+	//定数バッファ設定
+	D3D11_BUFFER_DESC cbDesc;
+	cbDesc.ByteWidth = sizeof(ConstantBuffer);
+	cbDesc.Usage = D3D11_USAGE_DEFAULT;
+	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbDesc.CPUAccessFlags = 0;
+	cbDesc.MiscFlags = 0;
+	cbDesc.StructureByteStride = 0;
+
+	// 定数バッファ作成
+	if (FAILED(m_Device->CreateBuffer(&cbDesc, NULL, m_ConstantBuffer.ReleaseAndGetAddressOf())))
+	{
+		return false;
+	}
+
+	// ワールド座標変換
+	XMMATRIX worldMatrix = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
+
+	// ビュー座標
+	XMVECTOR eye = XMVectorSet(0.0f, 0.0f, -2.0f, 0.0f);		// 視点位置
+	XMVECTOR focus = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);		// 注視点
+	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);			// 上ベクトル
+	XMMATRIX viewMatrix = XMMatrixLookAtLH(eye, focus, up);		// ビュー変換
+
+	// プロジェクション変換
+	float    fov = XMConvertToRadians(45.0f);					// 視野角
+	float    aspect = m_ViewPort.Width / m_ViewPort.Height;		// アスペクト比
+	float    nearZ = 0.1f;										// 近
+	float    farZ = 100.0f;										// 遠
+	XMMATRIX projMatrix = XMMatrixPerspectiveFovLH(fov, aspect, nearZ, farZ);
+
+	// 各変換行列セット
+	ConstantBuffer cb;
+	XMStoreFloat4x4(&cb.world, XMMatrixTranspose(worldMatrix));
+	XMStoreFloat4x4(&cb.view, XMMatrixTranspose(viewMatrix));
+	XMStoreFloat4x4(&cb.projection, XMMatrixTranspose(projMatrix));
+
+	// ライト
+	XMVECTOR Light = XMVector3Normalize(XMVectorSet(0.0f, 0.5f, -1.0f, 0.0f));
+	XMStoreFloat4(&cb.LightDir, Light);
+
+	m_ImmediateContext->UpdateSubresource(m_ConstantBuffer.Get(), 0, NULL, &cb, 0, 0);
+
 	return true;
 }
 
 
-void DirectX11Wrapper::PolygonDraw()
+void DirectX11Wrapper::ObjectDraw()
 {
 	UINT strides = sizeof(Vertex);
 	UINT offsets = 0;
@@ -276,7 +318,7 @@ void DirectX11Wrapper::PolygonDraw()
 	m_ImmediateContext->PSSetShaderResources(0, 1, NoiseTextureResouce.GetAddressOf());
 	m_ImmediateContext->PSSetSamplers(0, 1, m_SamplerState.GetAddressOf());
 
-	m_ImmediateContext->DrawIndexed(6, 0, 0);
+	m_ImmediateContext->DrawIndexed(IndexNum, 0, 0);
 }
 
 bool DirectX11Wrapper::CubeInit()
@@ -322,6 +364,8 @@ bool DirectX11Wrapper::CubeInit()
 		20, 21, 22,    23, 22, 21,
 	};
 
+	IndexNum = ARRAYSIZE(IndexList);
+
 	//頂点バッファ作成
 	D3D11_BUFFER_DESC vbDesc;
 	vbDesc.ByteWidth = sizeof(Vertex) * ARRAYSIZE(VertexList);
@@ -357,20 +401,6 @@ bool DirectX11Wrapper::CubeInit()
 	irData.SysMemSlicePitch = 0;
 
 	if (FAILED(m_Device->CreateBuffer(&ibDesc, &irData, m_IndexBuffer.ReleaseAndGetAddressOf())))
-	{
-		return false;
-	}
-
-	//定数バッファ作成
-	D3D11_BUFFER_DESC cbDesc;
-	cbDesc.ByteWidth = sizeof(ConstantBuffer);
-	cbDesc.Usage = D3D11_USAGE_DEFAULT;
-	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	cbDesc.CPUAccessFlags = 0;
-	cbDesc.MiscFlags = 0;
-	cbDesc.StructureByteStride = 0;
-
-	if (FAILED(m_Device->CreateBuffer(&cbDesc, NULL, m_ConstantBuffer.ReleaseAndGetAddressOf())))
 	{
 		return false;
 	}
@@ -412,29 +442,39 @@ bool DirectX11Wrapper::CubeInit()
 		return E_FAIL;
 	}
 
-	return true;
-}
+	//定数バッファ設定
+	D3D11_BUFFER_DESC cbDesc;
+	cbDesc.ByteWidth = sizeof(ConstantBuffer);
+	cbDesc.Usage = D3D11_USAGE_DEFAULT;
+	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbDesc.CPUAccessFlags = 0;
+	cbDesc.MiscFlags = 0;
+	cbDesc.StructureByteStride = 0;
 
-// キューブの描画
-void DirectX11Wrapper::CubeDraw()
-{
-	static float Angle = 0;
-	Angle ++;
-	if (Angle >= 360)Angle = 0;
+	// 定数バッファ作成
+	if (FAILED(m_Device->CreateBuffer(&cbDesc, NULL, m_ConstantBuffer.ReleaseAndGetAddressOf())))
+	{
+		return false;
+	}
 
-	XMMATRIX worldMatrix = XMMatrixTranslation(0.0f, 0.0f, 0.0f)*XMMatrixRotationY(Angle*(PI/180));
 
-	XMVECTOR eye = XMVectorSet(2.0f, 2.0f, -2.0f, 0.0f);
-	XMVECTOR focus = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	XMMATRIX viewMatrix = XMMatrixLookAtLH(eye, focus, up);
+	// ワールド座標変換
+	XMMATRIX worldMatrix = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
-	float    fov = XMConvertToRadians(45.0f);
-	float    aspect = m_ViewPort.Width / m_ViewPort.Height;
-	float    nearZ = 0.1f;
-	float    farZ = 100.0f;
+	// ビュー座標
+	XMVECTOR eye = XMVectorSet(2.0f, 2.0f, -2.0f, 0.0f);		// 視点位置
+	XMVECTOR focus = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);		// 注視点
+	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);			// 上ベクトル
+	XMMATRIX viewMatrix = XMMatrixLookAtLH(eye, focus, up);		// ビュー変換
+
+	// プロジェクション変換
+	float    fov = XMConvertToRadians(45.0f);					// 視野角
+	float    aspect = m_ViewPort.Width / m_ViewPort.Height;		// アスペクト比
+	float    nearZ = 0.1f;										// 近
+	float    farZ = 100.0f;										// 遠
 	XMMATRIX projMatrix = XMMatrixPerspectiveFovLH(fov, aspect, nearZ, farZ);
 
+	// 各変換行列セット
 	ConstantBuffer cb;
 	XMStoreFloat4x4(&cb.world, XMMatrixTranspose(worldMatrix));
 	XMStoreFloat4x4(&cb.view, XMMatrixTranspose(viewMatrix));
@@ -446,20 +486,43 @@ void DirectX11Wrapper::CubeDraw()
 
 	m_ImmediateContext->UpdateSubresource(m_ConstantBuffer.Get(), 0, NULL, &cb, 0, 0);
 
-	UINT strides = sizeof(Vertex);
-	UINT offsets = 0;
-	m_ImmediateContext->IASetInputLayout(m_InputLayOut.Get());
-	m_ImmediateContext->IASetVertexBuffers(0, 1, m_VertexBuffer.GetAddressOf(), &strides, &offsets);
-	m_ImmediateContext->IASetIndexBuffer(m_IndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
-	m_ImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_ImmediateContext->VSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
-	m_ImmediateContext->VSSetShader(m_VertexShader.Get(), NULL, 0);
-	m_ImmediateContext->PSSetShader(m_PixelShader.Get(), NULL, 0);
+	return true;
+}
 
-	m_ImmediateContext->PSSetShaderResources(0, 1, NoiseTextureResouce.GetAddressOf());
-	m_ImmediateContext->PSSetSamplers(0, 1, m_SamplerState.GetAddressOf());
+void DirectX11Wrapper::ObjectUpdate()
+{
+	static float Angle = 0;
+	Angle++;
+	if (Angle >= 360)Angle = 0;
 
-	m_ImmediateContext->DrawIndexed(36, 0, 0);
+	// ワールド座標変換
+	XMMATRIX worldMatrix = XMMatrixTranslation(0.0f, 0.0f, 0.0f) ;
+
+	// ビュー座標
+	XMVECTOR eye = XMVectorSet(2.0f, 2.0f, -2.0f, 0.0f);		// 視点位置
+	XMVECTOR focus = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);		// 注視点
+	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);			// 上ベクトル
+	XMMATRIX viewMatrix = XMMatrixLookAtLH(eye, focus, up);		// ビュー変換
+
+	// プロジェクション変換
+	float    fov = XMConvertToRadians(45.0f);					// 視野角
+	float    aspect = m_ViewPort.Width / m_ViewPort.Height;		// アスペクト比
+	float    nearZ = 0.1f;										// 近
+	float    farZ = 100.0f;										// 遠
+	XMMATRIX projMatrix = XMMatrixPerspectiveFovLH(fov, aspect, nearZ, farZ);
+
+	// 各変換行列セット
+	ConstantBuffer cb;
+	XMStoreFloat4x4(&cb.world, XMMatrixTranspose(worldMatrix));
+	XMStoreFloat4x4(&cb.view, XMMatrixTranspose(viewMatrix));
+	XMStoreFloat4x4(&cb.projection, XMMatrixTranspose(projMatrix));
+
+	// ライト
+	XMVECTOR Light = XMVector3Normalize(XMVectorSet(0.0f, 0.5f, -1.0f, 0.0f));
+	XMStoreFloat4(&cb.LightDir, Light);
+
+	m_ImmediateContext->UpdateSubresource(m_ConstantBuffer.Get(), 0, NULL, &cb, 0, 0);
+
 }
 
 bool DirectX11Wrapper::CreateTexture()
@@ -554,7 +617,6 @@ void DirectX11Wrapper::BeforeRender()
 // 描画後処理
 void DirectX11Wrapper::AfterRender()
 {
-
 	m_SwapChain->Present(0, 0);
 }
 
