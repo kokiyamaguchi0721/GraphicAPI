@@ -5,6 +5,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
 	//DirectX11Wrapper Dx11;
+	DirectX12Wrapper Dx12;
 
 	HWND			hwnd;								// ウインドウハンドル
 	MSG				msg;								// メッセージ構造体
@@ -43,6 +44,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	//{
 	//	return 0;
 	//}
+	// 
+	// DirectxX12の初期化
+	if (FAILED(Dx12.Create(hwnd, rc)))
+	{
+		return 0;
+	}
 
 	ShowWindow(hwnd, nCmdShow);
 	UpdateWindow(hwnd);
@@ -63,9 +70,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
 		//// DirectX11 描画後処理
 		//Dx11.AfterRender();
+
+		// DirectX12 描画前処理
+		Dx12.BeforeRender();
+
+		// DirectX12 描画後処理
+		Dx12.AfterRender();
 	}
 
-	Dx11.Release();
+	// DirectX11終了処理
+	//Dx11.Release();
+
+	// DirectX12終了処理
+	Dx12.Release();
 
 	return msg.wParam;
 }

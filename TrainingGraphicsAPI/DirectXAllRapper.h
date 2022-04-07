@@ -8,7 +8,6 @@
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"d3dcompiler.lib")
 
-#define _DEBUG
 #define SAFE_RELEASE(p)      { if( NULL != p ) { p->Release(); p = NULL; } }
 
 using namespace DirectX;

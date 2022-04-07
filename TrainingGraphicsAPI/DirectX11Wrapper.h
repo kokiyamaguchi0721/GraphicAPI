@@ -5,12 +5,11 @@
 
 #include "DirectXAllRapper.h"
 
-// ƒ‰ƒCƒuƒ‰ƒŠƒŠƒ“ƒN
 #pragma comment(lib,"d3d11.lib")
 
 class DirectX11Wrapper :public DirectXAllRapper
 {
-public:
+private:
 	ComPtr<ID3D11Device> m_Device;
 	ComPtr<ID3D11DeviceContext> m_ImmediateContext;
 	ComPtr<IDXGISwapChain> m_SwapChain;
