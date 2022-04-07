@@ -1,11 +1,18 @@
 #include "main.h"
 
+#define TIMER_ID 1
+#define FREAM_RATE (1000 / 60)
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+// FPS固定用
+DWORD timeBefore;
+DWORD fps = 0;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
-	//DirectX11Wrapper Dx11;
-	DirectX12Wrapper Dx12;
+	DirectX11Wrapper Directx;
+	//DirectX12Wrapper Directx;
 
 	HWND			hwnd;								// ウインドウハンドル
 	MSG				msg;								// メッセージ構造体
@@ -38,51 +45,60 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
 	if (!hwnd) return FALSE;
 
+	timeBefore = GetTickCount();
 
-	//// DirectxX11の初期化
-	//if (FAILED(Dx11.Create(hwnd, rc)))
-	//{
-	//	return 0;
-	//}
-	// 
+	// タイマーセット
+	SetTimer(hwnd, TIMER_ID, FREAM_RATE, NULL);
+
 	// DirectxX12の初期化
-	if (FAILED(Dx12.Create(hwnd, rc)))
+	if (FAILED(Directx.Create(hwnd, rc)))
 	{
 		return 0;
 	}
 
+	//Directx.PolygonInit();
+	Directx.CubeInit();
+
 	ShowWindow(hwnd, nCmdShow);
 	UpdateWindow(hwnd);
 
-	// メッセージループ
-	while (GetMessage(&msg, NULL, 0, 0) > 0) {
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
+	while (true) 
+	{
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			if (msg.message == WM_QUIT) 
+			{
+				break;
+			}
+			else 
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+				// DirectX 描画前処理
+				Directx.BeforeRender();
 
-		//// DirectX11 描画前処理
-		//Dx11.BeforeRender();
+				// 2Dポリゴン描画
+				//Directx.PolygonDraw();
 
-		//// 2Dポリゴン描画
-		////Dx11.PolygonDraw();
+				// 3Dキューブ描画
+				Directx.CubeDraw();
 
-		//// 3Dキューブ描画
-		//Dx11.CubeDraw();
+				// DirectX 描画後処理
+				Directx.AfterRender();
 
-		//// DirectX11 描画後処理
-		//Dx11.AfterRender();
-
-		// DirectX12 描画前処理
-		Dx12.BeforeRender();
-
-		// DirectX12 描画後処理
-		Dx12.AfterRender();
+			}
+		}
+		else
+		{
+			Sleep(5);
+		}
 	}
 
-	// DirectX11終了処理
-	//Dx11.Release();
+	// DirectX1終了処理
+	Directx.Release();
 
-	// DirectX12終了処理
-	Dx12.Release();
+	// タイマー開放
+	KillTimer(hwnd, TIMER_ID);
 
 	return msg.wParam;
 }
