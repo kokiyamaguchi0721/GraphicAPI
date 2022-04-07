@@ -5,18 +5,17 @@
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-// FPS固定用
-DWORD timeBefore;
-DWORD fps = 0;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
-	DirectX11Wrapper Directx;
-	//DirectX12Wrapper Directx;
+	//DirectX11Wrapper Directx;
+	DirectX12Wrapper Directx;
 
 	HWND			hwnd;								// ウインドウハンドル
 	MSG				msg;								// メッセージ構造体
 	WNDCLASSEX		wcex;								// ウインドウクラス構造体
+	DWORD timeBefore;
+	DWORD fps = 0;
 
 	// メモリリークを検知
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -57,35 +56,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	}
 
 	//Directx.PolygonInit();
-	Directx.CubeInit();
+	//Directx.CubeInit();
 
 	ShowWindow(hwnd, nCmdShow);
 	UpdateWindow(hwnd);
 
-	while (true) 
+	// メッセージループ
+	while (true)
 	{
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			if (msg.message == WM_QUIT) 
+			if (msg.message == WM_QUIT)
 			{
 				break;
 			}
-			else 
+			else
 			{
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
+
 				// DirectX 描画前処理
 				Directx.BeforeRender();
 
-				// 2Dポリゴン描画
-				//Directx.PolygonDraw();
-
-				// 3Dキューブ描画
-				Directx.CubeDraw();
+				// オブジェクト描画
+				//Directx.ObjectDraw();
 
 				// DirectX 描画後処理
 				Directx.AfterRender();
-
 			}
 		}
 		else
@@ -106,17 +103,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 // ウィンドウプロシージャ
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	switch (uMsg) {
+	switch (uMsg)
+	{
 	case WM_KEYDOWN:
-		switch (wParam) {
+		switch (wParam)
+		{
 		case VK_ESCAPE:
 			DestroyWindow(hwnd);
 			break;
 		}
 		break;
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
+
 	default:
 		return DefWindowProc(hwnd, uMsg, wParam, lParam);
 	}
