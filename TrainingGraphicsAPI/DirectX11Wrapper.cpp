@@ -10,14 +10,11 @@ HRESULT DirectX11Wrapper::Create(HWND hwnd, RECT rc)
 	DXGI_ADAPTER_DESC adapterDesc;
 
 	// グラフィックインタフェースファクトリを作成
-	if (FAILED(CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory)))
-	{
-		return E_FAIL;
-	}
+	HRESULT hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
+	if (FAILED(hr)) return hr;
 
 	int GPUNumber = 0;
 	int GPUMaxMem = 0;
-	HRESULT hr;
 
 	// GPUアダプタを検索
 	for (int i = 0; i < 100; i++)
@@ -177,10 +174,10 @@ void DirectX11Wrapper::Release()
 bool DirectX11Wrapper::PolygonInit()
 {
 	Vertex VertexList[]{
-		{ { -0.5f,  0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f, 1.0f }, {0.0f,0.0f}},
-		{ {  0.5f, -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f, 1.0f }, {1.0f,0.0f}},
-		{ { -0.5f, -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f, 1.0f }, {0.0f,1.0f}},
-		{ {  0.5f,  0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f, 1.0f }, {1.0f,1.0f}}
+		{ { -0.5f,  0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f, 1.0f }, {  0.0f,  0.0f,  1.0f }, {0.0f,0.0f}},
+		{ {  0.5f, -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f, 1.0f }, {  0.0f,  0.0f,  1.0f }, {1.0f,0.0f}},
+		{ { -0.5f, -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f, 1.0f }, {  0.0f,  0.0f,  1.0f }, {0.0f,1.0f}},
+		{ {  0.5f,  0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f, 1.0f }, {  0.0f,  0.0f,  1.0f }, {1.0f,1.0f}}
 	};
 
 	//頂点バッファ作成
@@ -240,6 +237,7 @@ bool DirectX11Wrapper::PolygonInit()
 	{
 		{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT   ,0,0                           ,D3D11_INPUT_PER_VERTEX_DATA,0},
 		{"COLOR"   ,0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0},
+		{"NORMAL" , 0,DXGI_FORMAT_R32G32B32_FLOAT,   0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0},
 		{"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,		 0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0},
 	};
 
@@ -284,35 +282,35 @@ void DirectX11Wrapper::PolygonDraw()
 bool DirectX11Wrapper::CubeInit()
 {
 	Vertex VertexList[]{
-	{ { -0.5f,  0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f } , {0.0f,0.0f}},
-	{ {  0.5f,  0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f } , {1.0f,0.0f}},
-	{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f } , {0.0f,1.0f}},
-	{ {  0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f } , {1.0f,1.0f}},
+	{ { -0.5f,  0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f } ,{  0.0f,  0.0f, -1.0f }, {0.0f,0.0f}},
+	{ {  0.5f,  0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f } ,{  0.0f,  0.0f, -1.0f }, {1.0f,0.0f}},
+	{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f } ,{  0.0f,  0.0f, -1.0f }, {0.0f,1.0f}},
+	{ {  0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f } ,{  0.0f,  0.0f, -1.0f }, {1.0f,1.0f}},
 
-	{ { -0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f, 1.0f }, {0.0f,0.0f}},
-	{ { -0.5f, -0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f, 1.0f }, {1.0f,0.0f}},
-	{ {  0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f, 1.0f }, {0.0f,1.0f}},
-	{ {  0.5f, -0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f, 1.0f }, {1.0f,1.0f}},
+	{ { -0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f, 1.0f }, {  0.0f,  0.0f,  1.0f }, {0.0f,0.0f}},
+	{ { -0.5f, -0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f, 1.0f }, {  0.0f,  0.0f,  1.0f }, {1.0f,0.0f}},
+	{ {  0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f, 1.0f }, {  0.0f,  0.0f,  1.0f }, {0.0f,1.0f}},
+	{ {  0.5f, -0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f, 1.0f }, {  0.0f,  0.0f,  1.0f }, {1.0f,1.0f}},
 
-	{ { -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 0.0f, 1.0f }, {0.0f,0.0f}},
-	{ { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f, 1.0f }, {1.0f,0.0f}},
-	{ { -0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 0.0f, 1.0f }, {0.0f,1.0f}},
-	{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f, 1.0f }, {1.0f,1.0f}},
+	{ { -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 0.0f, 1.0f }, { -1.0f,  0.0f,  0.0f }, {0.0f,0.0f}},
+	{ { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f, 1.0f }, { -1.0f,  0.0f,  0.0f }, {1.0f,0.0f}},
+	{ { -0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 0.0f, 1.0f }, { -1.0f,  0.0f,  0.0f }, {0.0f,1.0f}},
+	{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f, 1.0f }, { -1.0f,  0.0f,  0.0f }, {1.0f,1.0f}},
 
-	{ {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f } , {0.0f,0.0f} },
-	{ {  0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f } , {1.0f,0.0f}},
-	{ {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f } , {0.0f,1.0f}},
-	{ {  0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f } , {1.0f,1.0f}},
+	{ {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f }, {  1.0f,  0.0f,  0.0f } , {0.0f,0.0f}},
+	{ {  0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f }, {  1.0f,  0.0f,  0.0f } , {1.0f,0.0f}},
+	{ {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f }, {  1.0f,  0.0f,  0.0f } , {0.0f,1.0f}},
+	{ {  0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f }, {  1.0f,  0.0f,  0.0f } , {1.0f,1.0f}},
 
-	{ { -0.5f,  0.5f,  0.5f }, { 1.0f, 0.0f, 1.0f, 1.0f } , {0.0f,0.0f}},
-	{ {  0.5f,  0.5f,  0.5f }, { 1.0f, 0.0f, 1.0f, 1.0f } , {1.0f,0.0f}},
-	{ { -0.5f,  0.5f, -0.5f }, { 1.0f, 0.0f, 1.0f, 1.0f } , {0.0f,1.0f}},
-	{ {  0.5f,  0.5f, -0.5f }, { 1.0f, 0.0f, 1.0f, 1.0f } , {1.0f,1.0f}},
+	{ { -0.5f,  0.5f,  0.5f }, { 1.0f, 0.0f, 1.0f, 1.0f }, {  0.0f,  1.0f,  0.0f }  , {0.0f,0.0f}},
+	{ {  0.5f,  0.5f,  0.5f }, { 1.0f, 0.0f, 1.0f, 1.0f }, {  0.0f,  1.0f,  0.0f }  , {1.0f,0.0f}},
+	{ { -0.5f,  0.5f, -0.5f }, { 1.0f, 0.0f, 1.0f, 1.0f }, {  0.0f,  1.0f,  0.0f }  , {0.0f,1.0f}},
+	{ {  0.5f,  0.5f, -0.5f }, { 1.0f, 0.0f, 1.0f, 1.0f }, {  0.0f,  1.0f,  0.0f }  , {1.0f,1.0f}},
 
-	{ { -0.5f, -0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f } , {0.0f,0.0f}},
-	{ { -0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f } , {1.0f,0.0f}},
-	{ {  0.5f, -0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f } , {0.0f,1.0f}},
-	{ {  0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f } , {1.0f,1.0f}},
+	{ { -0.5f, -0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f }, {  0.0f, -1.0f,  0.0f } , {0.0f,0.0f}},
+	{ { -0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f }, {  0.0f, -1.0f,  0.0f } , {1.0f,0.0f}},
+	{ {  0.5f, -0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f }, {  0.0f, -1.0f,  0.0f } , {0.0f,1.0f}},
+	{ {  0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f }, {  0.0f, -1.0f,  0.0f } , {1.0f,1.0f}},
 	};
 
 	WORD IndexList[]{
@@ -394,6 +392,7 @@ bool DirectX11Wrapper::CubeInit()
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0,                            0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOR"   , 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{"NORMAL" , 0,DXGI_FORMAT_R32G32B32_FLOAT,   0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0},
 		{"TEXCOORD" , 0, DXGI_FORMAT_R32G32_FLOAT,		 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
@@ -419,7 +418,11 @@ bool DirectX11Wrapper::CubeInit()
 // キューブの描画
 void DirectX11Wrapper::CubeDraw()
 {
-	XMMATRIX worldMatrix = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
+	static float Angle = 0;
+	Angle ++;
+	if (Angle >= 360)Angle = 0;
+
+	XMMATRIX worldMatrix = XMMatrixTranslation(0.0f, 0.0f, 0.0f)*XMMatrixRotationY(Angle*(PI/180));
 
 	XMVECTOR eye = XMVectorSet(2.0f, 2.0f, -2.0f, 0.0f);
 	XMVECTOR focus = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
@@ -436,6 +439,11 @@ void DirectX11Wrapper::CubeDraw()
 	XMStoreFloat4x4(&cb.world, XMMatrixTranspose(worldMatrix));
 	XMStoreFloat4x4(&cb.view, XMMatrixTranspose(viewMatrix));
 	XMStoreFloat4x4(&cb.projection, XMMatrixTranspose(projMatrix));
+
+	// ライト
+	XMVECTOR Light = XMVector3Normalize(XMVectorSet(0.0f, 0.5f, -1.0f, 0.0f));
+	XMStoreFloat4(&cb.LightDir, Light);
+
 	m_ImmediateContext->UpdateSubresource(m_ConstantBuffer.Get(), 0, NULL, &cb, 0, 0);
 
 	UINT strides = sizeof(Vertex);
@@ -447,6 +455,7 @@ void DirectX11Wrapper::CubeDraw()
 	m_ImmediateContext->VSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
 	m_ImmediateContext->VSSetShader(m_VertexShader.Get(), NULL, 0);
 	m_ImmediateContext->PSSetShader(m_PixelShader.Get(), NULL, 0);
+
 	m_ImmediateContext->PSSetShaderResources(0, 1, NoiseTextureResouce.GetAddressOf());
 	m_ImmediateContext->PSSetSamplers(0, 1, m_SamplerState.GetAddressOf());
 
@@ -482,7 +491,7 @@ bool DirectX11Wrapper::CreateTexture()
 
 	// テクスチャの書き換え
 	D3D11_MAPPED_SUBRESOURCE MapSubResouce;;
-	m_ImmediateContext->Map(CreateTexture.Get(),0,D3D11_MAP_WRITE_DISCARD,0,&MapSubResouce);
+	m_ImmediateContext->Map(CreateTexture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &MapSubResouce);
 
 	// 乱数生成
 	std::random_device seed;
@@ -490,7 +499,7 @@ bool DirectX11Wrapper::CreateTexture()
 	std::uniform_int_distribution<> number(0, 255);		// 0～255
 
 	byte srcData[PixelSize * PixelSize * 4] = { 0 };	// ビットマップを黒で初期化
-	
+
 	// テクスチャデータ作成
 	for (int i = 0; i < PixelSize * PixelSize * 4; i += 4)
 	{
@@ -501,7 +510,7 @@ bool DirectX11Wrapper::CreateTexture()
 
 	// データ書き込み
 	memcpy(MapSubResouce.pData, srcData, sizeof(srcData));
-	m_ImmediateContext->Unmap(CreateTexture.Get(),0);
+	m_ImmediateContext->Unmap(CreateTexture.Get(), 0);
 
 	// シェーダーリソースビュー設定
 	D3D11_SHADER_RESOURCE_VIEW_DESC srv;
