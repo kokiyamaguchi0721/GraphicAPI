@@ -35,7 +35,11 @@ private:
 	ComPtr<ID3D12RootSignature>					m_RootSignature;
 	ComPtr<ID3D12PipelineState>					m_PipelineState;
 	ComPtr<ID3D12Resource>						m_VertexBuffer;
-	D3D12_VERTEX_BUFFER_VIEW					IBView;
+	ComPtr<ID3D12Resource>						m_IndexBuffer;
+	D3D12_VERTEX_BUFFER_VIEW					m_VBView;
+	D3D12_INDEX_BUFFER_VIEW						m_IBView;
+	ComPtr<ID3DBlob>							m_VertexShader;
+	ComPtr<ID3DBlob>							m_PixelShader;
 
 public:
 	HRESULT Create(HWND hwnd, RECT rc);
@@ -46,5 +50,7 @@ public:
 	void	WaitForCommandQueue();
 
 	bool	PolygonInit();
+	void	ObjectDraw();
+	bool	CreateTexture();
 };
 

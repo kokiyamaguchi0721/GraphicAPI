@@ -22,10 +22,10 @@ private:
 	ComPtr<ID3D11InputLayout>			m_InputLayOut;
 	ComPtr<ID3D11VertexShader>			m_VertexShader;
 	ComPtr<ID3D11PixelShader>			m_PixelShader;
-	D3D11_VIEWPORT						m_ViewPort;
+	D3D11_VIEWPORT						m_ViewPort = {};
 	ComPtr<ID3D11ShaderResourceView>	NoiseTextureResouce;
 	ComPtr<ID3D11SamplerState>			m_SamplerState;
-	int									IndexNum;
+	int									IndexNum=0;
 
 public:
 	HRESULT Create(HWND hwnd, RECT rc);

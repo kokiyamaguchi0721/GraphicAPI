@@ -414,7 +414,7 @@ bool DirectX11Wrapper::CubeInit()
 	// 頂点シェーダー作成
 	if (FAILED(m_Device->CreateVertexShader(vsblob->GetBufferPointer(), vsblob->GetBufferSize(), NULL, m_VertexShader.ReleaseAndGetAddressOf())))
 	{
-		return E_FAIL;
+		return false;
 	}
 
 	// 頂点データ設定
@@ -429,7 +429,7 @@ bool DirectX11Wrapper::CubeInit()
 	// インプットレイアウト作成
 	if (FAILED(m_Device->CreateInputLayout(VertexDesc, ARRAYSIZE(VertexDesc), vsblob->GetBufferPointer(), vsblob->GetBufferSize(), m_InputLayOut.ReleaseAndGetAddressOf())))
 	{
-		return E_FAIL;
+		return false;
 	}
 
 	// ピクセルシェーダーコンパイル
@@ -439,7 +439,7 @@ bool DirectX11Wrapper::CubeInit()
 	// ピクセルシェーダー作成
 	if (FAILED(m_Device->CreatePixelShader(psblob->GetBufferPointer(), psblob->GetBufferSize(), NULL, m_PixelShader.ReleaseAndGetAddressOf())))
 	{
-		return E_FAIL;
+		return false;
 	}
 
 	//定数バッファ設定

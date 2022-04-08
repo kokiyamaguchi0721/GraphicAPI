@@ -55,7 +55,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 		return 0;
 	}
 
-	//Directx.PolygonInit();
+	Directx.PolygonInit();
 	//Directx.CubeInit();
 
 	ShowWindow(hwnd, nCmdShow);
@@ -79,7 +79,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 				Directx.BeforeRender();
 
 				// オブジェクト描画
-				//Directx.ObjectDraw();
+				Directx.ObjectDraw();
 
 				// DirectX 描画後処理
 				Directx.AfterRender();
