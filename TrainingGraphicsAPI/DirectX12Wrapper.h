@@ -36,11 +36,13 @@ private:
 	ComPtr<ID3D12PipelineState>					m_PipelineState;
 	ComPtr<ID3D12Resource>						m_VertexBuffer;
 	ComPtr<ID3D12Resource>						m_IndexBuffer;
+	ComPtr<ID3D12Resource>						m_ConstBuffer;
 	D3D12_VERTEX_BUFFER_VIEW					m_VBView;
 	D3D12_INDEX_BUFFER_VIEW						m_IBView;
 	ComPtr<ID3DBlob>							m_VertexShader;
 	ComPtr<ID3DBlob>							m_PixelShader;
-
+	ComPtr<ID3D12DescriptorHeap>				m_BasicDescHeap = nullptr;
+	
 public:
 	HRESULT Create(HWND hwnd, RECT rc);
 	void    Release();
@@ -50,6 +52,8 @@ public:
 	void	WaitForCommandQueue();
 
 	bool	PolygonInit();
+	bool	CubeInit();
+	void	CubeUpdate();
 	void	ObjectDraw();
 	bool	CreateTexture();
 };

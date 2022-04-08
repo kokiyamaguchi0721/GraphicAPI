@@ -168,6 +168,7 @@ void DirectX11Wrapper::Release()
 {
 }
 
+// ポリゴンの初期化
 bool DirectX11Wrapper::PolygonInit()
 {
 	Vertex VertexList[]{
@@ -191,6 +192,7 @@ bool DirectX11Wrapper::PolygonInit()
 	VBResouceData.SysMemPitch = 0;
 	VBResouceData.SysMemSlicePitch = 0;
 
+	// 頂点バッファ作成
 	if (FAILED(m_Device->CreateBuffer(&VBDesc, &VBResouceData, m_VertexBuffer.ReleaseAndGetAddressOf())))
 	{
 		return false;
@@ -248,7 +250,7 @@ bool DirectX11Wrapper::PolygonInit()
 
 	// ピクセルシェーダーコンパイル
 	ComPtr<ID3DBlob> psblob;
-	CompileShader("Shader/BasicPS.hlsl", "main", "ps_5_0", psblob.ReleaseAndGetAddressOf());
+	CompileShader("Shader/TexturePS.hlsl", "main", "ps_5_0", psblob.ReleaseAndGetAddressOf());
 
 	// ピクセルシェーダー作成
 	if (FAILED(m_Device->CreatePixelShader(psblob->GetBufferPointer(), psblob->GetBufferSize(), NULL, m_PixelShader.ReleaseAndGetAddressOf())))
@@ -434,7 +436,7 @@ bool DirectX11Wrapper::CubeInit()
 
 	// ピクセルシェーダーコンパイル
 	ComPtr<ID3DBlob> psblob;
-	CompileShader("Shader/BasicPS.hlsl", "main", "ps_5_0", psblob.ReleaseAndGetAddressOf());
+	CompileShader("Shader/TexturePS.hlsl", "main", "ps_5_0", psblob.ReleaseAndGetAddressOf());
 
 	// ピクセルシェーダー作成
 	if (FAILED(m_Device->CreatePixelShader(psblob->GetBufferPointer(), psblob->GetBufferSize(), NULL, m_PixelShader.ReleaseAndGetAddressOf())))

@@ -6,16 +6,15 @@
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
-	//DirectX11Wrapper Directx;
-	DirectX12Wrapper Directx;
+	DirectX11Wrapper Directx;
+	//DirectX12Wrapper Directx;
 
 	HWND			hwnd;								// ウインドウハンドル
 	MSG				msg;								// メッセージ構造体
 	WNDCLASSEX		wcex;								// ウインドウクラス構造体
 	DWORD timeBefore;
-	DWORD fps = 0;
 
 	// メモリリークを検知
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -44,7 +43,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
 	if (!hwnd) return FALSE;
 
-	timeBefore = GetTickCount();
+	timeBefore = (DWORD)GetTickCount64();
 
 	// タイマーセット
 	SetTimer(hwnd, TIMER_ID, FREAM_RATE, NULL);
@@ -78,6 +77,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 				// DirectX 描画前処理
 				Directx.BeforeRender();
 
+				//Directx.CubeUpdate();
+
 				// オブジェクト描画
 				Directx.ObjectDraw();
 
@@ -97,7 +98,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	// タイマー開放
 	KillTimer(hwnd, TIMER_ID);
 
-	return msg.wParam;
+	return (int)msg.wParam;
 }
 
 // ウィンドウプロシージャ

@@ -55,7 +55,7 @@ HRESULT DirectX12Wrapper::Create(HWND hwnd, RECT rc)
 
 	// 最適なレベルでデバイス生成
 	D3D_FEATURE_LEVEL FeatureLevel;
-	bool Flg;
+	bool Flg = false;
 	for (auto lv : Levels)
 	{
 		if (SUCCEEDED(D3D12CreateDevice(tmpAdapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(m_Device.ReleaseAndGetAddressOf()))))
@@ -240,6 +240,8 @@ HRESULT DirectX12Wrapper::Create(HWND hwnd, RECT rc)
 	// 深度用ディスクリプターヒープ生成
 	m_Device->CreateDepthStencilView(DepthBuffer.Get(), &dsvDesc, dsvHeap->GetCPUDescriptorHandleForHeapStart());
 
+	CreateTexture();
+
 	return S_OK;
 }
 
@@ -248,6 +250,17 @@ void DirectX12Wrapper::Release()
 }
 
 // 描画前処理
+
+void DirectX12Wrapper::ObjectDraw()
+{
+	m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+	m_CommandList->SetPipelineState(m_PipelineState.Get());
+	m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_CommandList->IASetVertexBuffers(0, 1, &m_VBView);
+	m_CommandList->IASetIndexBuffer(&m_IBView);
+	m_CommandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+}
+
 void DirectX12Wrapper::BeforeRender()
 {
 	BuckBuffIdx = m_SwapChain->GetCurrentBackBufferIndex();
@@ -260,59 +273,83 @@ void DirectX12Wrapper::BeforeRender()
 	m_CommandList->OMSetRenderTargets(1, &rtvH, false, &dsvH);
 
 	//　画面クリア
-	float clearColor[] = { 0.0f,1.0f,0.0f,1.0f };
+	float clearColor[] = { 0.0f,0.0f,0.0f,1.0f };
 	m_CommandList->ClearRenderTargetView(rtvH, clearColor, 0, nullptr);
 	m_CommandList->ClearDepthStencilView(dsvH, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	m_CommandList->RSSetViewports(1, &ViewPort);			// ビューポート
 	m_CommandList->RSSetScissorRects(1, &ScissorRect);	// シザー矩形
 }
 
-void DirectX12Wrapper::ObjectDraw()
+// テクスチャ生成
+bool DirectX12Wrapper::CreateTexture()
 {
-	m_CommandList->SetPipelineState(m_PipelineState.Get());
-	m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
-	m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_CommandList->IASetVertexBuffers(0, 1, &m_VBView);
-	m_CommandList->IASetIndexBuffer(&m_IBView);
-	m_CommandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-}
+	struct TexRGBA
+	{
+		unsigned char R, G, B, A;
+	};
+	std::vector<TexRGBA> TextureData(256 * 256);
 
-//// テクスチャ生成
-//bool DirectX12Wrapper::CreateTexture()
-//{
-//	struct TexRGBA
-//	{
-//		unsigned char R, G, B, A;
-//	};
-//	std::vector<TexRGBA> TextureData(256 * 256);
-//
-//	for (auto& rgba : TextureData)
-//	{
-//		rgba.R = rand() * 256;
-//		rgba.G = rand() * 256;
-//		rgba.B = rand() * 256;
-//		rgba.A = 255;
-//	}
-//
-//	// テクスチャ用バッファ設定
-//	D3D12_HEAP_PROPERTIES TexHeapProp = {};
-//	TexHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
-//	TexHeapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-//	TexHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
-//	TexHeapProp.CreationNodeMask = 0;
-//	TexHeapProp.VisibleNodeMask = 0;
-//
-//	// テクスチャ設定
-//	D3D12_RESOURCE_DESC TexResDesc = {};
-//	TexResDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-//	TexResDesc.Width = 256;
-//	TexResDesc.Height = 256;
-//	TexResDesc.DepthOrArraySize = 1;
-//
-//
-//
-//	return true;
-//}
+	for (auto& rgba : TextureData)
+	{
+		rgba.R = rand() % 256;
+		rgba.G = rand() % 256;
+		rgba.B = rand() % 256;
+		rgba.A = 255;
+	}
+
+	// テクスチャ用バッファ設定
+	D3D12_HEAP_PROPERTIES TexHeapProp = {};
+	TexHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
+	TexHeapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+	TexHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+	TexHeapProp.CreationNodeMask = 0;
+	TexHeapProp.VisibleNodeMask = 0;
+
+	// テクスチャ設定
+	D3D12_RESOURCE_DESC TexResDesc = {};
+	TexResDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	TexResDesc.Width = 256;
+	TexResDesc.Height = 256;
+	TexResDesc.DepthOrArraySize = 1;
+	TexResDesc.SampleDesc.Count = 1;
+	TexResDesc.SampleDesc.Quality = 0;
+	TexResDesc.MipLevels = 1;
+	TexResDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	TexResDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	TexResDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	ComPtr<ID3D12Resource> TexBuffer;
+	
+	HRESULT hr = m_Device->CreateCommittedResource(&TexHeapProp,D3D12_HEAP_FLAG_NONE,&TexResDesc,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,nullptr,IID_PPV_ARGS(TexBuffer.ReleaseAndGetAddressOf()));
+	if (FAILED(hr)) return false;
+
+	hr = TexBuffer->WriteToSubresource(0,nullptr,TextureData.data(),sizeof(TexRGBA)*256,sizeof(TexRGBA)*TextureData.size());
+	if (FAILED(hr)) return false;
+
+	// テクスチャ用ディスクリプターヒープ設定
+	D3D12_DESCRIPTOR_HEAP_DESC DescHeapDesc = {};
+	DescHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	DescHeapDesc.NodeMask = 0;
+	DescHeapDesc.NumDescriptors = 1;
+	DescHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+
+	// テクスチャ用ディスクリプターヒープ生成
+	m_Device->CreateDescriptorHeap(&DescHeapDesc,IID_PPV_ARGS(m_BasicDescHeap.ReleaseAndGetAddressOf()));
+	if (FAILED(hr)) return false;
+
+	// シェーダーリソースビュー用設定
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc={};
+	srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+
+	// シェーダーリソースビュー生成
+	m_Device->CreateShaderResourceView(TexBuffer.Get(),&srvDesc,m_BasicDescHeap->GetCPUDescriptorHandleForHeapStart());
+
+	return true;
+}
 
 // 描画後処理
 void DirectX12Wrapper::AfterRender()
@@ -443,7 +480,7 @@ bool DirectX12Wrapper::PolygonInit()
 	// インデックスバッファ生成
 	hr = m_Device->CreateCommittedResource(&IBHeapProp,D3D12_HEAP_FLAG_NONE,
 		&IBResDesc,D3D12_RESOURCE_STATE_GENERIC_READ,nullptr,IID_PPV_ARGS(m_IndexBuffer.ReleaseAndGetAddressOf()));
-	if (FAILED(hr)) return hr;
+	if (FAILED(hr)) return false;
 
 	unsigned short* IndexMap = nullptr;
 	m_IndexBuffer->Map(0, nullptr, (void**)&IndexMap);
@@ -481,6 +518,38 @@ bool DirectX12Wrapper::PolygonInit()
 	// ルートシグネチャ
 	D3D12_ROOT_SIGNATURE_DESC RootSigDesc = {};
 	RootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+	// ディスクリプタレンジ
+	D3D12_DESCRIPTOR_RANGE DescTblRange = {};
+	DescTblRange.NumDescriptors = 1;
+	DescTblRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	DescTblRange.BaseShaderRegister = 0;
+	DescTblRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	// ルートパラメーター
+	D3D12_ROOT_PARAMETER RootParam = {};
+	RootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	RootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	RootParam.DescriptorTable.pDescriptorRanges = &DescTblRange;
+	RootParam.DescriptorTable.NumDescriptorRanges = 1;
+
+	RootSigDesc.pParameters= &RootParam;
+	RootSigDesc.NumParameters = 1;
+
+	// サンプラー
+	D3D12_STATIC_SAMPLER_DESC SamplerDesc = {};
+	SamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	SamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	SamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	SamplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+	SamplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	SamplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+	SamplerDesc.MinLOD = 0.0f;
+	SamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	SamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+
+	RootSigDesc.pStaticSamplers = &SamplerDesc;
+	RootSigDesc.NumStaticSamplers = 1;
 
 	ID3DBlob* RootSigBlob = nullptr;
 	ID3DBlob* ErrorBlob = nullptr;
@@ -538,9 +607,19 @@ bool DirectX12Wrapper::PolygonInit()
 	PipelineStateDesc.SampleDesc.Count = 1;
 	PipelineStateDesc.SampleDesc.Quality = 0;
 
+	// パイプラインステート生成
 	hr = m_Device->CreateGraphicsPipelineState(&PipelineStateDesc, IID_PPV_ARGS(m_PipelineState.ReleaseAndGetAddressOf()));
 	if (FAILED(hr)) return false;
 
 	return true;
+}
+
+bool DirectX12Wrapper::CubeInit()
+{
+	return true;
+}
+
+void DirectX12Wrapper::CubeUpdate()
+{
 }
 
