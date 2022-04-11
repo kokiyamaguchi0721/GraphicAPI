@@ -1,35 +1,18 @@
-//-----------------------------------------------------------------------------
-// File : SimplePS.hlsl
-// Desc : Simple Pixel Shader.
-// Copyright(c) Pocol. All right reserved.
-//-----------------------------------------------------------------------------
+#include "psvsHeader.hlsli"
 
-///////////////////////////////////////////////////////////////////////////////
-// VSOutput structure
-///////////////////////////////////////////////////////////////////////////////
-struct VSOutput
-{
-    float4  Position : SV_POSITION; // 位置座標です.
-    float4  Color    : COLOR;       // 頂点カラーです.
-};
-
-///////////////////////////////////////////////////////////////////////////////
-// PSOutput structure
-///////////////////////////////////////////////////////////////////////////////
-struct PSOutput
-{
-    float4  Color : SV_TARGET0;     // ピクセルカラーです.
-};
+Texture2D TextureData : register(t0);
+SamplerState SamplerData : register(s0);
 
 //-----------------------------------------------------------------------------
 //      ピクセルシェーダのメインエントリーポイントです.
 //-----------------------------------------------------------------------------
-PSOutput main(VSOutput input)
+float4 main(VS_OUT input):SV_Target
 {
-    PSOutput output =(PSOutput)0;
+   // PSOutput output =(PSOutput)0;
 
-    output.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
+    //output.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
     //output.Color = input.Color;
 
-    return output;
+    //return float4(1.0f,1.0f,0.0f,1.0f);
+    return TextureData.Sample(SamplerData, input.tex);
 }

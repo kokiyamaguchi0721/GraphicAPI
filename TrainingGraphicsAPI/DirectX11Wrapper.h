@@ -28,13 +28,13 @@ private:
 	int									IndexNum=0;
 
 public:
-	HRESULT Create(HWND hwnd, RECT rc);
-	void    Release();
-	void	BeforeRender();
-	void	AfterRender();
-	bool	PolygonInit();
-	void	ObjectDraw();
-	bool	CubeInit();
+	HRESULT Create(HWND hwnd, RECT rc) override final;
+	void    Release() override final;
+	void	BeforeRender() override final;
+	void	AfterRender() override final;
+	bool	PolygonInit() override final;
+	bool	CubeInit() override final;
+	void	ObjectDraw() override final;
 	void	ObjectUpdate();
 	bool	CreateTexture();
 };

@@ -33,5 +33,14 @@ class DirectXAllRapper
 {
 protected:
 	bool CompileShader(const char* FileName,const char* EntryPoint,const char* ShaderVer,ID3DBlob** ReturnBlob);
+public:
+	virtual HRESULT Create(HWND hwnd, RECT rc) = 0;
+	virtual void    Release() = 0;
+	virtual void	BeforeRender() = 0;
+	virtual void	AfterRender() = 0;
+	virtual bool	PolygonInit() = 0;
+	virtual bool	CubeInit() = 0;
+	virtual void	ObjectDraw() = 0;
+
 };
 

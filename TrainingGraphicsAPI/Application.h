@@ -6,6 +6,9 @@
 #include "DirectX11Wrapper.h"
 #include "DirectX12Wrapper.h"
 
+#define		NAME			"APIPractice"
+#define		TITLE			"Renderer"
+
 // アプリケーション管理クラス
 class Application
 {
@@ -17,9 +20,9 @@ private:
 
 	void Update();
 	void Render();
-	AllInWrapper* ApiWrapper;
+	DirectXAllRapper* ApiWrapper;
 public:
-	void (Application::* Process)();
+	//void (Application::* Process)();
 	bool Initialize();
 	void Finalize();
 

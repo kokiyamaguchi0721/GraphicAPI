@@ -1,5 +1,8 @@
 #include "Application.h"
 
+#define TIMER_ID 1
+#define FREAM_RATE (1000 / 60)
+
 Application::Application(uint32_t Width, uint32_t Height)
 {
 	m_Width = Width;
@@ -19,23 +22,29 @@ bool Application::InitWnd()
 		return false;
 	}
 
-	// ウィンドウの設定.
-	WNDCLASSEX wc = {};
-	wc.cbSize = sizeof(WNDCLASSEX);
-	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = WndProc;
-	wc.hIcon = LoadIcon(hInst, IDI_APPLICATION);
-	wc.hCursor = LoadCursor(hInst, IDC_ARROW);
-	wc.hbrBackground = GetSysColorBrush(COLOR_BACKGROUND);
-	wc.lpszMenuName = nullptr;
-	wc.lpszClassName = "Sampl";
-	wc.hIconSm = LoadIcon(hInst, IDI_APPLICATION);
+	DWORD timeBefore;
 
-	// ウィンドウの登録.
-	if (!RegisterClassEx(&wc))
-	{
-		return false;
-	}
+	// メモリリークを検知
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
+	WNDCLASSEX		wcex;								// ウインドウクラス構造体
+
+	// ウインドウクラス情報のセット
+	wcex.hInstance = m_hInst;
+	wcex.lpszClassName = NAME;
+	wcex.lpfnWndProc = (WNDPROC)WndProc;
+	wcex.style = 0;
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.hIcon = LoadIcon((HINSTANCE)NULL, IDI_APPLICATION);
+	wcex.hIconSm = LoadIcon((HINSTANCE)NULL, IDI_WINLOGO);
+	wcex.hCursor = LoadCursor((HINSTANCE)NULL, IDC_ARROW);
+	wcex.lpszMenuName = 0;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	wcex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+
+	// ウインドウクラスの登録
+	if (!RegisterClassEx(&wcex)) return FALSE;
 
 	// インスタンスハンドル設定.
 	m_hInst = hInst;
@@ -49,30 +58,18 @@ bool Application::InitWnd()
 	auto style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
 	AdjustWindowRect(&rc, style, FALSE);
 
-	// ウィンドウを生成.
-	m_hWnd = CreateWindowEx(
-		0,
-		"Sample",
-		TEXT("Sample"),
-		style,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		rc.right - rc.left,
-		rc.bottom - rc.top,
-		nullptr,
-		nullptr,
-		m_hInst,
-		nullptr);
+	m_hWnd = CreateWindow(NAME, TITLE, WS_CAPTION | WS_SYSMENU, 0,
+		0, rc.right - rc.left, rc.bottom - rc.top, HWND_DESKTOP, (HMENU)NULL, m_hInst, (LPVOID)NULL);
 
-	if (m_hWnd == nullptr)
-	{
-		return false;
-	}
+	if (!m_hWnd) return false;
 
-	// ウィンドウを表示.
+	timeBefore = (DWORD)GetTickCount64();
+
+	// タイマーセット
+	SetTimer(m_hWnd, TIMER_ID, FREAM_RATE, NULL);
+
+
 	ShowWindow(m_hWnd, SW_SHOWNORMAL);
-
-	// ウィンドウを更新.
 	UpdateWindow(m_hWnd);
 
 	// ウィンドウにフォーカスを設定.
@@ -98,63 +95,79 @@ void Application::MainLoop()
 {
 	MSG msg = {};
 
-	while (WM_QUIT != msg.message)
+	// メッセージループ
+	while (true)
 	{
-		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) == TRUE)
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			if (msg.message == WM_QUIT)
+			{
+				break;
+			}
+			else
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+
+				Render();
+			}
 		}
 		else
 		{
-			// Render();
+			Sleep(5);
 		}
 	}
 }
 
 bool Application::Initialize()
 {
+	std::cout << "DirectX11 >> 0" << std::endl;
+	std::cout << "DirectX12 >> 1" << std::endl;
+
+	// どのAPIを使用するか選択
+	int ChoiceIdx;
+	while (true)
+	{
+		std::cin >> ChoiceIdx;
+		if (ChoiceIdx <= 1)
+		{
+			break;
+		}
+	}
+
+	switch (ChoiceIdx)
+	{
+
+	case 0:												// DirectX11 
+		ApiWrapper = new DirectX11Wrapper;				// APIタイプセット
+		//Process = &Application::RunWindowsAPI;			// 関数ポインタセット
+		break;
+
+
+	case 1:												// DirectX12
+		ApiWrapper = new DirectX12Wrapper;				// APIタイプセット
+		//Process = &Application::RunWindowsAPI;			// 関数ポインタセット
+		break;
+
+	default:
+		return false;
+		break;
+	}
+
 	// ウィンドウの初期化.
 	if (!InitWnd())
 	{
 		return false;
 	}
 
-	//std::cout << "DirectX11 >> 0" << std::endl;
-	//std::cout << "DirectX12 >> 1" << std::endl;
+	RECT rc = { 0,0,m_Width,m_Height };
 
-	//// どのAPIを使用するか選択
-	//int ChoiceIdx;
-	//while (true)
-	//{
-	//	std::cin >> ChoiceIdx;
-	//	if (ChoiceIdx <= 1)
-	//	{
-	//		break;
-	//	}
-	//}
+	//API初期化
+	HRESULT hr = ApiWrapper->Create(m_hWnd, rc);
+	if (FAILED(hr)) return false;
 
-	//switch (ChoiceIdx)
-	//{
-	//	
-	//case 0:												// DirectX11 
-	//	//ApiWrapper = new DirectX11Wrapper;				// APIタイプセット
-	//	//Process = &Application::RunWindowsAPI;			// 関数ポインタセット
-	//	break;
-
-	//	
-	//case 1:												// DirectX12
-	//	//ApiWrapper = new DirectX12Wrapper;				// APIタイプセット
-	//	//Process = &Application::RunWindowsAPI;			// 関数ポインタセット
-	//	break;
-
-	//default:
-	//	return false;
-	//	break;
-	//}
-
-	// API初期化
-	//ApiWrapper->Initialize();
+	//ApiWrapper->PolygonInit();
+	ApiWrapper->CubeInit();
 
 	return true;
 }
@@ -167,7 +180,11 @@ void Application::Render()
 {
 	if (ApiWrapper != nullptr)
 	{
-		//ApiWrapper->Render();
+		ApiWrapper->BeforeRender();
+
+		ApiWrapper->ObjectDraw();
+
+		ApiWrapper->AfterRender();
 	}
 }
 
@@ -175,7 +192,7 @@ void Application::Finalize()
 {
 	if (ApiWrapper != nullptr)
 	{
-		//ApiWrapper->Finalize();
+		ApiWrapper->Release();
 	}
 	delete ApiWrapper;
 	ApiWrapper = nullptr;
@@ -191,7 +208,7 @@ LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 	break;
 
 	default:
-	{ /* DO_NOTHING */ }
+	{ }
 	break;
 	}
 

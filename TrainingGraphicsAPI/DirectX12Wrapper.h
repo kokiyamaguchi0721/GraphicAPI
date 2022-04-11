@@ -26,6 +26,13 @@ struct alignas(256) Transform
 	DirectX::XMMATRIX   Proj;       // éÀâeçsóÒÇ≈Ç∑.
 };
 
+struct Texture
+{
+	ComPtr<ID3D12Resource> pResouce;
+	D3D12_CPU_DESCRIPTOR_HANDLE HandleCPU;
+	D3D12_GPU_DESCRIPTOR_HANDLE HandleGPU;
+};
+
 class DirectX12Wrapper : public DirectXAllRapper
 {
 private:
@@ -39,7 +46,7 @@ private:
 	ComPtr<ID3D12DescriptorHeap>           m_HeapRTV;
 	ComPtr<ID3D12DescriptorHeap>           m_HeapDSV;
 	ComPtr<ID3D12Fence>                    m_Fence;
-	ComPtr<ID3D12DescriptorHeap>           m_HeapCBV;
+	ComPtr<ID3D12DescriptorHeap>           m_BasicDescHeap;
 	ComPtr<ID3D12Resource>                 m_VertexBuffer;
 	ComPtr<ID3D12Resource>                 m_IndexBuffer;
 	ComPtr<ID3D12Resource>                 m_ConstantBuffer[FrameCount * 2];
@@ -59,21 +66,19 @@ private:
 	ConstantBufferView<Transform>   m_CBView[FrameCount * 2];
 	float                           m_RotateAngle;
 	int								m_IndexNum;
-
+	Texture							m_Texture;
 
 public:
-	HRESULT Create(HWND hwnd, RECT rc);
-	void    Release();
-	void	BeforeRender();
-	void	AfterRender();
-	void	WaitGPU();
+	HRESULT Create(HWND hwnd, RECT rc) override final;
+	void    Release() override final;
+	void	BeforeRender() override final;
+	void	AfterRender() override final;
+	bool	PolygonInit() override final;
+	bool	CubeInit() override final;
+	void	ObjectDraw() override final;
 
 	void	SetResouceBarrier(ID3D12Resource* Resouce, D3D12_RESOURCE_STATES Before, D3D12_RESOURCE_STATES After);
-
-	bool	PolygonInit();
-	bool	CubeInit();
-	void	CubeUpdate();
-	void	ObjectDraw();
+	void	WaitGPU();
 	bool	CreateTexture();
 };
 
