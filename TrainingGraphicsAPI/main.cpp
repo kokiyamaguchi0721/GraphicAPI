@@ -1,4 +1,25 @@
 #include "main.h"
+//
+//#if defined(DEBUG) || defined(_DEBUG)
+//#define _CRTDBG_MAP_ALLOC
+//#include <crtdbg.h>
+//#endif
+//
+//#include "Application.h"
+//
+//int wmain(int argc, wchar_t** argv, wchar_t** evnp)
+//{
+//#if defined(DEBUG) || defined(_DEBUG)
+//    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+//#endif
+//
+//    // アプリケーション実行
+//    Application app(SCREEN_WIDTH, SCREEN_HEIGHT);
+//    app.Run();
+//
+//    return 0;
+//}
+
 
 #define TIMER_ID 1
 #define FREAM_RATE (1000 / 60)
@@ -8,8 +29,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
-	DirectX11Wrapper Directx;
-	//DirectX12Wrapper Directx;
+	//DirectX11Wrapper Directx;
+	DirectX12Wrapper Directx;
 
 	HWND			hwnd;								// ウインドウハンドル
 	MSG				msg;								// メッセージ構造体
@@ -54,8 +75,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmd
 		return 0;
 	}
 
-	Directx.PolygonInit();
-	//Directx.CubeInit();
+	//Directx.PolygonInit();
+	Directx.CubeInit();
 
 	ShowWindow(hwnd, nCmdShow);
 	UpdateWindow(hwnd);
@@ -81,6 +102,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmd
 
 				// オブジェクト描画
 				Directx.ObjectDraw();
+				//Directx.Render();
 
 				// DirectX 描画後処理
 				Directx.AfterRender();

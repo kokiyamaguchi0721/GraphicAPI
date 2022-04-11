@@ -14,7 +14,8 @@
 using namespace DirectX;
 using namespace Microsoft::WRL;
 
-struct Vertex {
+
+struct alignas(256)  Vertex {
 	float pos[3];
 	float col[4];
 	float nor[3];
